@@ -14,9 +14,8 @@
   "scripts": {
     "start": "node bin start",
     "prepublishOnly": "npm test",
-    "test": "rm node_modules/ssb-server; set -e; for t in test/*.js; do echo TEST $t; node $t; done && ./test/deps.sh all",
+    "test": "set -e; for t in test/*.js; do echo TEST $t; node $t; done && compatibility",
     "reinstall": "rm -rf node_modules package-lock.json npm-shrinkwrap.json; export npm_config_package_lock=true; npm install && npm dedupe && npm shrinkwrap",
-    "pretest": "./scripts/pretest.js",
     "coverage": "nyc --reporter=lcov npm test"
   },
   "dependencies": {
@@ -75,6 +74,7 @@
   "devDependencies": {
     "@types/node": "^11.13.4",
     "cat-names": "^3.0.0",
+    "compatibility": "^1.0.0",
     "dog-names": "^2.0.0",
     "hexpp": "^2.0.0",
     "interleavings": "^1.0.0",
@@ -107,6 +107,16 @@
       "node_modules/{ssb-*,flume*,secret-stack,muxrpc,multiserver}/{util,lib,frame,indexes}/*.js"
     ]
   },
+  "compatibility": [
+    "ssb-gossip",
+    "ssb-blobs",
+    "ssb-invite",
+    "ssb-replicate",
+    "ssb-ebt",
+    "ssb-db",
+    "ssb-ooo",
+    "ssb-plugins"
+  ],
   "author": "Paul Frazee <pfrazee@gmail.com>",
   "license": "MIT"
 }
