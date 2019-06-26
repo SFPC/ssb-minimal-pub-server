@@ -1,7 +1,7 @@
 {
   "name": "ssb-minimal-pub-server",
   "description": "network protocol layer for secure-scuttlebutt",
-  "version": "15.0.1",
+  "version": "15.0.2",
   "homepage": "https://github.com/ssbc/ssb-minimal-pub-server",
   "repository": {
     "type": "git",
