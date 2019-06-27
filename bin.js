@@ -22,6 +22,16 @@ var i = argv.indexOf('--')
 var conf = argv.slice(i+1)
 argv = ~i ? argv.slice(0, i) : argv
 
+const err = (msg, errorCode=1) => { console.error(msg); process.exit(errorCode) }
+
+if (!process.env.ssb_appname) {
+  err(`
+    Please specify ssb_appname in your environment.
+    This will also be the name for a hidden folder in your home directory.
+    eg: $ ssb_appname=foo ssb-server start # creates ~/.foo
+`)
+}
+
 var config = Config(process.env.ssb_appname, minimist(conf))
 
 if (config.keys.curve === 'k256')
