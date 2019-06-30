@@ -1,7 +1,7 @@
 const fs = require('fs')
 const ProgressBar = require('./lib/progress')
 
-const runServer = (config, manifestFile) => {
+const runServer = (config, manifestFile, cb) => {
   const packageJson = require('./package.json')
 
   console.log(`running server`)
@@ -35,7 +35,17 @@ const runServer = (config, manifestFile) => {
   // write RPC manifest to ~/.${ssb_appname}/manifest.json
   fs.writeFileSync(manifestFile, JSON.stringify(server.getManifest(), null, 2))
 
+  if (cb) {
+    setInterval(() => {
+      const progress = server.progress()
+      if (progress) cb()
+    }, 10)
+    setTimeout(() => {
+      cb(new Error(`Timed out starting server after 10 seconds`))
+    }, 10 * 1000)
+  }
+
   if (process.stdout.isTTY && (config.logging.level !== 'info')) { ProgressBar(server.progress) }
 }
 
-modules.exports = runServer
+module.exports = runServer
