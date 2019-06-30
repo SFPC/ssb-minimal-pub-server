@@ -1,5 +1,4 @@
 #! /usr/bin/env node
-
 var fs = require('fs')
 var path = require('path')
 var pull = require('pull-stream')
@@ -12,161 +11,119 @@ var createHash = require('multiblob/util').createHash
 var minimist = require('minimist')
 var muxrpcli = require('muxrpcli')
 var cmdAliases = require('./lib/cli-cmd-aliases')
-var ProgressBar = require('./lib/progress')
-var packageJson = require('./package.json')
+const runServer = require('./server')
 
-// get config as cli options after --, options before that are
-// options to the command.
-var argv = process.argv.slice(2)
-var i = argv.indexOf('--')
-var conf = argv.slice(i + 1)
-argv = ~i ? argv.slice(0, i) : argv
+// command [options] -- [config]
+let options = argv.slice(2)
+const config = args.splice(options.indexOf('--'))
 
-const err = (msg, errorCode = 1) => { console.error(msg); process.exit(errorCode) }
+if (options[0].includes('help')) {
+  const invocation = argv.slice(0,2).join(' ')
+  console.log(`
+  ssb-local - run a scuttlebutt local node
+
+  ssb-local will start a local server and save its config in \`manifest.json\`
+
+  open another terminal, and then you can connect with the correct config options
+
+  the most important settings are \`ssb_appname\` and \`--host\`:
+    ssb_appname=[appname]
+      environment variable, what directory to sync in ~/ (~/.ssb, ~/.{ssb_appname})
+
+    --host [host] the address to listen on / connect to
+
+  ssb_appname="[appname]" ${invocation} [command] [command options] -- [config]
+
+  example:
+
+  # start the server
+  ssb_appname="test" ${invocation} -- --host=127.0.0.1
+
+  # publish a message
+
+  ssb_appname="test" ${invocation} publish --type=post --text="hi there" -- --host=127.0.0.1
+  `)
+}
 
 if (!process.env.ssb_appname) {
-  err(`
+  throw explain(new Error(`missing ssb_appname`), `
     Please specify ssb_appname in your environment.
     This will also be the name for a hidden folder in your home directory.
-    eg: $ ssb_appname=foo ssb-server start # creates ~/.foo
+    eg: $ ssb_appname=foo ssb-local # creates ~/.foo
 `)
 }
 
-var config = Config(process.env.ssb_appname, minimist(conf))
+const config = Config(process.env.ssb_appname, minimist(conf))
 
-if (config.keys.curve === 'k256') {
-  throw new Error('k256 curves are no longer supported,' +
-                  'please delete' + path.join(config.path, 'secret'))
+const manifestFile = path.join(config.path, 'manifest.json')
+
+let manifest
+try {
+  const data = fs.readFileSync(manifestFile)
+  manifest = JSON.parse(data)
+} catch (err) {
+  // If we have trouble reading or parsing the config, start a new server
+  return runServer(config)
 }
 
-var manifestFile = path.join(config.path, 'manifest.json')
-
-if (argv[0] === 'server') {
-  console.warn('WARNING-DEPRECATION: `sbot server` has been renamed to `ssb-server start`')
-  argv[0] = 'start'
+const options = {
+  manifest: manifest,
+  port: config.port,
+  host: config.host || 'localhost',
+  caps: config.caps,
+  key: config.key || config.keys.id
 }
 
-if (argv[0] === 'start') {
-  console.log(packageJson.name, packageJson.version, config.path, 'logging.level:' + config.logging.level)
-  console.log('my key ID:', config.keys.public)
+Client(config.keys, options, (error, rpc) => {
+  if (error) {
+    if (error.message.includes('could not connect')) {
+      explain(error, `Error: Could not connect to ssb-server ${options.host}:${options.port}`)
+      process.exit(1)
+    }
+    throw error
+  }
 
-  // special start command:
-  // import ssbServer and start the server
+  // add aliases
+  for (let alias in cmdAliases) {
+    rpc[alias] = rpc[cmdAliases[alias]]
+    manifest[alias] = manifest[cmdAliases[alias]]
+  }
 
-  var createSsbServer = require('./')
-    .use(require('ssb-onion'))
-    .use(require('ssb-unix-socket'))
-    .use(require('ssb-no-auth'))
-    .use(require('ssb-plugins'))
-    .use(require('ssb-master'))
-    .use(require('ssb-legacy-conn'))
-    .use(require('ssb-replicate'))
-    .use(require('ssb-friends'))
-    .use(require('ssb-blobs'))
-    .use(require('ssb-invite'))
-    .use(require('ssb-local'))
-    .use(require('ssb-logging'))
-    .use(require('ssb-query'))
-    .use(require('ssb-ws'))
-    .use(require('ssb-ebt'))
-    .use(require('ssb-ooo'))
-    .use(require('ssb-device-address'))
-    .use(require('ssb-identities'))
-    .use(require('ssb-peer-invites'))
-  // add third-party plugins
+  // add 'sync' command to write out manifest
+  manifest.config = 'sync'
+  rpc.config = cb => {
+    console.log(JSON.stringify(config, null, 2))
+    cb()
+  }
 
-  require('ssb-plugins').loadUserPlugins(createSsbServer, config)
-
-  // start server
-  var server = createSsbServer(config)
-
-  // write RPC manifest to ~/.ssb/manifest.json
-  fs.writeFileSync(manifestFile, JSON.stringify(server.getManifest(), null, 2))
-
-  if (process.stdout.isTTY && (config.logging.level !== 'info')) { ProgressBar(server.progress) }
-} else {
-  // normal command:
-  // create a client connection to the server
-
-  // read manifest.json
-  var manifest
-  try {
-    manifest = JSON.parse(fs.readFileSync(manifestFile))
-  } catch (err) {
-    throw explain(err,
-      'no manifest file' +
-      '- should be generated first time server is run'
+  // HACK
+  // we need to output the hash of blobs that are added via blobs.add
+  // because muxrpc doesnt support the `sink` callback yet, we need this manual override
+  // -prf
+  if (process.argv[2] === 'blobs.add') {
+    const filename = process.argv[3]
+    const source =
+      filename ? File(filename)
+        : !process.stdin.isTTY ? toPull.source(process.stdin)
+          : (function () {
+            console.error('USAGE:')
+            console.error('  blobs.add <filename> # add a file')
+            console.error('  source | blobs.add   # read from stdin')
+            process.exit(1)
+          })()
+    const hasher = createHash('sha256')
+    pull(
+      source,
+      hasher,
+      rpc.blobs.add(err => {
+        if (err) { throw err }
+        console.log('&' + hasher.digest)
+        process.exit()
+      })
     )
+    return
   }
 
-  var opts = {
-    manifest: manifest,
-    port: config.port,
-    host: config.host || 'localhost',
-    caps: config.caps,
-    key: config.key || config.keys.id
-  }
-
-  // connect
-  Client(config.keys, opts, function (err, rpc) {
-    if (err) {
-      if (/could not connect/.test(err.message)) {
-        console.error('Error: Could not connect to ssb-server ' + opts.host + ':' + opts.port)
-        console.error('Use the "start" command to start it.')
-        console.error('Use --verbose option to see full error')
-        if (config.verbose) throw err
-        process.exit(1)
-      }
-      throw err
-    }
-
-    // add aliases
-    for (var k in cmdAliases) {
-      rpc[k] = rpc[cmdAliases[k]]
-      manifest[k] = manifest[cmdAliases[k]]
-    }
-
-    // add some extra commands
-    //    manifest.version = 'async'
-    manifest.config = 'sync'
-    //    rpc.version = function (cb) {
-    //      console.log(packageJson.version)
-    //      cb()
-    //    }
-    rpc.config = function (cb) {
-      console.log(JSON.stringify(config, null, 2))
-      cb()
-    }
-
-    // HACK
-    // we need to output the hash of blobs that are added via blobs.add
-    // because muxrpc doesnt support the `sink` callback yet, we need this manual override
-    // -prf
-    if (process.argv[2] === 'blobs.add') {
-      var filename = process.argv[3]
-      var source =
-        filename ? File(process.argv[3])
-          : !process.stdin.isTTY ? toPull.source(process.stdin)
-            : (function () {
-              console.error('USAGE:')
-              console.error('  blobs.add <filename> # add a file')
-              console.error('  source | blobs.add   # read from stdin')
-              process.exit(1)
-            })()
-      var hasher = createHash('sha256')
-      pull(
-        source,
-        hasher,
-        rpc.blobs.add(function (err) {
-          if (err) { throw err }
-          console.log('&' + hasher.digest)
-          process.exit()
-        })
-      )
-      return
-    }
-
-    // run commandline flow
-    muxrpcli(argv, manifest, rpc, config.verbose)
-  })
-}
+  // run commandline flow
+  muxrpcli(argv, manifest, rpc, config.verbose)
+})
