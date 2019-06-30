@@ -108,7 +108,6 @@
     ]
   },
   "compatibility": [
-    "ssb-gossip",
     "ssb-blobs",
     "ssb-invite",
     "ssb-replicate",
