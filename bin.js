@@ -1,28 +1,28 @@
 #! /usr/bin/env node
 
-var fs           = require('fs')
-var path         = require('path')
-var pull         = require('pull-stream')
-var toPull       = require('stream-to-pull-stream')
-var File         = require('pull-file')
-var explain      = require('explain-error')
-var Config       = require('ssb-config/inject')
-var Client       = require('ssb-client')
-var createHash   = require('multiblob/util').createHash
-var minimist     = require('minimist')
-var muxrpcli     = require('muxrpcli')
-var cmdAliases   = require('./lib/cli-cmd-aliases')
-var ProgressBar  = require('./lib/progress')
-var packageJson  = require('./package.json')
+var fs = require('fs')
+var path = require('path')
+var pull = require('pull-stream')
+var toPull = require('stream-to-pull-stream')
+var File = require('pull-file')
+var explain = require('explain-error')
+var Config = require('ssb-config/inject')
+var Client = require('ssb-client')
+var createHash = require('multiblob/util').createHash
+var minimist = require('minimist')
+var muxrpcli = require('muxrpcli')
+var cmdAliases = require('./lib/cli-cmd-aliases')
+var ProgressBar = require('./lib/progress')
+var packageJson = require('./package.json')
 
-//get config as cli options after --, options before that are
-//options to the command.
+// get config as cli options after --, options before that are
+// options to the command.
 var argv = process.argv.slice(2)
 var i = argv.indexOf('--')
-var conf = argv.slice(i+1)
+var conf = argv.slice(i + 1)
 argv = ~i ? argv.slice(0, i) : argv
 
-const err = (msg, errorCode=1) => { console.error(msg); process.exit(errorCode) }
+const err = (msg, errorCode = 1) => { console.error(msg); process.exit(errorCode) }
 
 if (!process.env.ssb_appname) {
   err(`
@@ -34,19 +34,20 @@ if (!process.env.ssb_appname) {
 
 var config = Config(process.env.ssb_appname, minimist(conf))
 
-if (config.keys.curve === 'k256')
-  throw new Error('k256 curves are no longer supported,'+
+if (config.keys.curve === 'k256') {
+  throw new Error('k256 curves are no longer supported,' +
                   'please delete' + path.join(config.path, 'secret'))
+}
 
 var manifestFile = path.join(config.path, 'manifest.json')
 
-if (argv[0] == 'server') {
-  console.log('WARNING-DEPRECATION: `sbot server` has been renamed to `ssb-server start`')
+if (argv[0] === 'server') {
+  console.warn('WARNING-DEPRECATION: `sbot server` has been renamed to `ssb-server start`')
   argv[0] = 'start'
 }
 
-if (argv[0] == 'start') {
-  console.log(packageJson.name, packageJson.version, config.path, 'logging.level:'+config.logging.level)
+if (argv[0] === 'start') {
+  console.log(packageJson.name, packageJson.version, config.path, 'logging.level:' + config.logging.level)
   console.log('my key ID:', config.keys.public)
 
   // special start command:
@@ -82,8 +83,7 @@ if (argv[0] == 'start') {
   // write RPC manifest to ~/.ssb/manifest.json
   fs.writeFileSync(manifestFile, JSON.stringify(server.getManifest(), null, 2))
 
-  if(process.stdout.isTTY && (config.logging.level != 'info'))
-    ProgressBar(server.progress)
+  if (process.stdout.isTTY && (config.logging.level !== 'info')) { ProgressBar(server.progress) }
 } else {
   // normal command:
   // create a client connection to the server
@@ -94,8 +94,8 @@ if (argv[0] == 'start') {
     manifest = JSON.parse(fs.readFileSync(manifestFile))
   } catch (err) {
     throw explain(err,
-      'no manifest file'
-      + '- should be generated first time server is run'
+      'no manifest file' +
+      '- should be generated first time server is run'
     )
   }
 
@@ -109,12 +109,12 @@ if (argv[0] == 'start') {
 
   // connect
   Client(config.keys, opts, function (err, rpc) {
-    if(err) {
+    if (err) {
       if (/could not connect/.test(err.message)) {
         console.error('Error: Could not connect to ssb-server ' + opts.host + ':' + opts.port)
         console.error('Use the "start" command to start it.')
         console.error('Use --verbose option to see full error')
-        if(config.verbose) throw err
+        if (config.verbose) throw err
         process.exit(1)
       }
       throw err
@@ -127,12 +127,12 @@ if (argv[0] == 'start') {
     }
 
     // add some extra commands
-//    manifest.version = 'async'
+    //    manifest.version = 'async'
     manifest.config = 'sync'
-//    rpc.version = function (cb) {
-//      console.log(packageJson.version)
-//      cb()
-//    }
+    //    rpc.version = function (cb) {
+    //      console.log(packageJson.version)
+    //      cb()
+    //    }
     rpc.config = function (cb) {
       console.log(JSON.stringify(config, null, 2))
       cb()
@@ -146,21 +146,20 @@ if (argv[0] == 'start') {
       var filename = process.argv[3]
       var source =
         filename ? File(process.argv[3])
-      : !process.stdin.isTTY ? toPull.source(process.stdin)
-      : (function () {
-        console.error('USAGE:')
-        console.error('  blobs.add <filename> # add a file')
-        console.error('  source | blobs.add   # read from stdin')
-        process.exit(1)
-      })()
+          : !process.stdin.isTTY ? toPull.source(process.stdin)
+            : (function () {
+              console.error('USAGE:')
+              console.error('  blobs.add <filename> # add a file')
+              console.error('  source | blobs.add   # read from stdin')
+              process.exit(1)
+            })()
       var hasher = createHash('sha256')
       pull(
         source,
         hasher,
         rpc.blobs.add(function (err) {
-          if (err)
-            throw err
-          console.log('&'+hasher.digest)
+          if (err) { throw err }
+          console.log('&' + hasher.digest)
           process.exit()
         })
       )
@@ -171,10 +170,3 @@ if (argv[0] == 'start') {
     muxrpcli(argv, manifest, rpc, config.verbose)
   })
 }
-
-
-
-
-
-
-
