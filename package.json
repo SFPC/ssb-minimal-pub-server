@@ -92,7 +92,7 @@
     "ssb-generate": "^1.0.1",
     "ssb-gossip": "^1.1.0",
     "ssb-validate": "^4",
-    "tape": "^4.9.1",
+    "tape": "^4.11.0",
     "typescript": "^3.3.4000",
     "typewiselite": "^1.0.0"
   },
