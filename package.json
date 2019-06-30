@@ -73,7 +73,7 @@
   "devDependencies": {
     "@types/node": "^11.13.4",
     "cat-names": "^3.0.0",
-    "compatibility": "^1.0.0",
+    "compatibility": "^1.0.1",
     "dog-names": "^2.0.0",
     "hexpp": "^2.0.0",
     "interleavings": "^1.0.0",
