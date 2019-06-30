@@ -1220,35 +1220,6 @@
         "pull-write": "^1.1.1"
       }
     },
-    "flumeview-query": {
-      "version": "6.3.0",
-      "resolved": "https://registry.npmjs.org/flumeview-query/-/flumeview-query-6.3.0.tgz",
-      "integrity": "sha512-8QBannTFLICARmflhHpXNeR5hh6IzIyJz4XhKTofzmxq/hXEn1un7aF6P6dRQkOwthENDTbSB07eWKqwnYDKtw==",
-      "requires": {
-        "deep-equal": "^1.0.1",
-        "flumeview-level": "^3.0.0",
-        "map-filter-reduce": "^3.0.7",
-        "pull-flatmap": "0.0.1",
-        "pull-paramap": "^1.1.3",
-        "pull-sink-through": "0.0.0",
-        "pull-stream": "^3.4.0"
-      },
-      "dependencies": {
-        "map-filter-reduce": {
-          "version": "3.2.2",
-          "resolved": "https://registry.npmjs.org/map-filter-reduce/-/map-filter-reduce-3.2.2.tgz",
-          "integrity": "sha512-p+NIGQbEBxlw/qWwG+NME98G/9kjOQI70hmaH8QEZtIWfTmfMYLKQW4PJChP4izPHNAxlOfv/qefP0+2ZXn84A==",
-          "requires": {
-            "binary-search": "^1.2.0",
-            "compare-at-paths": "^1.0.0",
-            "pull-sink-through": "0.0.0",
-            "pull-sort": "^1.0.1",
-            "pull-stream": "^3.4.3",
-            "typewiselite": "^1.0.0"
-          }
-        }
-      }
-    },
     "flumeview-reduce": {
       "version": "1.3.16",
       "resolved": "https://registry.npmjs.org/flumeview-reduce/-/flumeview-reduce-1.3.16.tgz",
@@ -2704,17 +2675,6 @@
       "version": "0.2.2",
       "resolved": "https://registry.npmjs.org/map-cache/-/map-cache-0.2.2.tgz",
       "integrity": "sha1-wyq9C9ZSXZsFFkW7TyasXcmKDb8="
-    },
-    "map-filter-reduce": {
-      "version": "2.2.1",
-      "resolved": "https://registry.npmjs.org/map-filter-reduce/-/map-filter-reduce-2.2.1.tgz",
-      "integrity": "sha1-YysSfDrl1q2eIc/dlpG2O4lE/NI=",
-      "requires": {
-        "binary-search": "^1.2.0",
-        "pull-sink-through": "0.0.0",
-        "pull-stream": "^3.3.0",
-        "typewiselite": "^1.0.0"
-      }
     },
     "map-merge": {
       "version": "1.1.0",
@@ -6057,17 +6017,6 @@
         "ssb-conn-staging": "0.0.1",
         "ssb-ref": "^2.13.9",
         "statistics": "^3.3.0"
-      }
-    },
-    "ssb-links": {
-      "version": "3.0.6",
-      "resolved": "https://registry.npmjs.org/ssb-links/-/ssb-links-3.0.6.tgz",
-      "integrity": "sha512-X+Hhj9E1PoGS5fQMBsUMgbULLI+e93kQTrygKs9EL9nUeIOOpMelQ1XDdBUIgP40qHK8esAVVES6dWmba15TfA==",
-      "requires": {
-        "flumeview-query": "^6.0.0",
-        "map-filter-reduce": "^2.0.0",
-        "pull-stream": "^3.1.0",
-        "ssb-msgs": "^5.2.0"
       }
     },
     "ssb-local": {
