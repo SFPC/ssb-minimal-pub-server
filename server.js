@@ -22,7 +22,6 @@ const runServer = (config, manifestFile, cb) => {
     .use(require('ssb-local'))
     .use(require('ssb-logging'))
     .use(require('ssb-query'))
-    .use(require('ssb-links'))
     .use(require('ssb-ws'))
     .use(require('ssb-ebt'))
     .use(require('ssb-ooo'))
