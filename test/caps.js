@@ -13,11 +13,9 @@ var createSsbServer =
     .use(require('ssb-legacy-conn'))
     .use(require('ssb-logging'))
 
-var createHash = require('crypto').createHash
+const { createHash } = require('crypto')
 
-function hash (data) {
-  return createHash('sha256').update(data, 'utf8').digest()
-}
+const hash = data => createHash('sha256').update(data, 'utf8').digest()
 
 const sign = hash('test-sign-cap1')
 const shs = hash('test-shs-cap1')

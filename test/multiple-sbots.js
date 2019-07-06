@@ -1,12 +1,10 @@
 const tape = require('tape')
 
 tape('createSsbServer method allows creating multiple servers with the same plugins', t => {
-  const { createSsbServer } = require('../')
-
-  createSsbServer()
+  require('../')
     .use(require('ssb-replicate'))
 
-  createSsbServer()
+  require('../')
     .use(require('ssb-replicate'))
     .use(require('ssb-legacy-conn'))
 
